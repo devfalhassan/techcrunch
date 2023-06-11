@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const userSchema = mongoose.Schema({
   name: {
     type: String,
+    trim: true,
     require: [true, 'Please provide your name']
   },
   email: {
@@ -36,12 +37,23 @@ const userSchema = mongoose.Schema({
   }
 });
 
+// Document Middleware: Will encrypt password field
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined;
   next();
 });
+
+// INSTANCE METHOD
+// Method that will be available on all Doc of a certain collection
+// check if given password is thesame as the DB stored password
+userSchema.methods.correctPassword = async function(
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
 
 const User = mongoose.model('User', userSchema);
 
